@@ -1,0 +1,19 @@
+
+sample_paths.pdf
+sim_est_coxpaper_20230422.rds
+
+sim_est_bias.pdf, sim_est_cov.pdf, sim_est_se.pdf
+sim_est_coxpaper_20230422.rds
+
+sim_est_edge_bias.pdf, sim_est_edge_cov.pdf, sim_est_edge_se.pdf
+sim_est_edge_coxpaper_20230423.rds
+
+variance_est.pdf
+sim_est_coxpaper_20230602.rds
+
+sim_est_coxpaper_20230422.rds --> estimation_1_20230422.rds
+sim_est_edge_coxpaper_20230423.rds --> estimation_2_20230423.rds
+sim_est_coxpaper_20230602.rds --> estimation_3_20230602.rds
+
+
+In R, {estimation_3,estimation_4,estimation_5} changed to {estimation_1,estimation_2,estimation_3}
