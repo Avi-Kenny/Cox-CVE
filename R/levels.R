@@ -28,7 +28,8 @@ if (cfg$run_sims && Sys.getenv("sim_run") %in% c("first", "")) {
       "Cox (basic)" = list(spline_df=1, edge_ind=F),
       "Cox (spline 4 df)" = list(spline_df=4, edge_ind=F),
       "Cox (spline 8 df)" = list(spline_df=8, edge_ind=F)
-    )
+    ),
+    bootstrap = F
   )
   
   # Estimation: edge mass
@@ -48,7 +49,8 @@ if (cfg$run_sims && Sys.getenv("sim_run") %in% c("first", "")) {
       "Cox (edge)" = list(spline_df=1, edge_ind=T),
       "Cox (spline 4 df)" = list(spline_df=4, edge_ind=F),
       "Cox (edge + spline 4 df)" = list(spline_df=4, edge_ind=T)
-    )
+    ),
+    bootstrap = F
   )
   
   # Estimation: standard error estimation
@@ -66,7 +68,25 @@ if (cfg$run_sims && Sys.getenv("sim_run") %in% c("first", "")) {
     return_se = T,
     estimator = list(
       "Cox (basic)" = list(spline_df=1, edge_ind=F)
-    )
+    ),
+    bootstrap = F
+  )
+  
+  # Estimation: bootstrap vs. analytic SEs
+  # Figures: bootstrap_vs_analytic
+  level_sets[["estimation_4"]] <- list(
+    n = 1000,
+    alpha_3 = -2,
+    dir = "decr",
+    sc_params = list("sc_params"=list(lmbd=2e-4, v=1.5, lmbd2=5e-5, v2=1.5)),
+    distr_S = c("Unif(0,1)", "N(0.5,0.04)"),
+    edge = "none",
+    surv_true = "Cox PH",
+    # surv_true = c("Cox PH", "S-shaped", "Cubic"),
+    sampling = "two-phase (50%)",
+    wts_type = "estimated",
+    estimator = list("Cox (basic)" = list(spline_df=1, edge_ind=F)),
+    bootstrap = c(F,T)
   )
   
   level_set <- level_sets[[cfg$sim_level_set]]

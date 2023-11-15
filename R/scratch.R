@@ -27,6 +27,8 @@ if (F) {
   xtabs(~Wstratum, data=dat)
   xtabs(~tps.stratum, data=dat)
   xtabs(~Wstratum+tps.stratum, data=dat)
+  xtabs(~Wstratum+tps.stratum+EventIndPrimaryD29, data=dat)
+  
   
   tmp <- with(dat, table(Wstratum, ph2.D29))
   weights <- rowSums(tmp)/tmp[,2]

@@ -19,22 +19,30 @@ if (cfg$sim_which=="estimation") {
     # Generate dataset
     dat_orig <- generate_data(L$n, L$alpha_3, L$distr_S, L$edge, L$surv_true,
                               L$sc_params, L$sampling, L$dir, L$wts_type)
-    
+
     # Load data into correct format
     dat <- load_data(
       time="y", event="delta", vacc="a", marker="s", covariates=c("x1","x2"),
       weights="weights", ph2="z", data=dat_orig
     )
-    
+
     # Obtain estimates
+    if (L$bootstrap) { ci_type <- "none" } else { ci_type <- "transformed" }
     ests <- vaccine::est_ce(
       dat = dat,
       type = "Cox",
       t_0 = C$t_0,
       s_out = C$points,
+      ci_type = ci_type,
       params_cox = params_ce_cox(spline_df = L$estimator$spline_df,
                                  edge_ind = L$estimator$edge_ind)
     )
+    if (L$bootstrap) {
+      b_ests <- bootstrap_ses(dat_orig, n_boot=1000)
+      # b_ests <- bootstrap_ses(dat_orig, n_boot=100) # !!!!!
+      ests$cr$ci_lower <- b_ests$ci_lower
+      ests$cr$ci_upper <- b_ests$ci_upper
+    }
 
     # Return results
     r_M0 <- attr(dat_orig, "r_M0")

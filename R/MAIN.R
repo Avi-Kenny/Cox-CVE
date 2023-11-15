@@ -3,7 +3,7 @@ cfg <- list(
   run_sims = T,
   run_process = F,
   sim_which = "estimation",
-  sim_level_set = "estimation_3",
+  sim_level_set = "estimation_4",
   sim_num = 1000,
   sim_parallel = F,
   sim_n_cores = 500,
@@ -19,6 +19,7 @@ source("R/config.R", local=T)
   source("R/misc_functions.R", local=T)
   source("R/one_simulation.R", local=T)
   source("R/generate_data.R", local=T)
+  source("R/bootstrap.R", local=T)
 }
 
 # Set level sets

@@ -1,6 +1,6 @@
-#########################################.
-##### VIZ: Estimation (bias,cov,sd) #####
-#########################################.
+####################################.
+##### Estimation (bias,cov,sd) #####
+####################################.
 
 # Figures produced: sim_est_edge_bias, sim_est_edge_cov, sim_est_edge_se,
 #                   sim_est_bias, sim_est_cov, sim_est_se
@@ -128,7 +128,6 @@ for (edge in c(F,T)) {
   }
   
   # Bias plot
-  # Export: 10" x 6" (Cox_edge: 7" x 4")
   plot_b <- ggplot(filter(p_data, stat=="bias"), p_aes) +
     p_ribbon(df_distr_b) +
     geom_line() +
@@ -138,7 +137,6 @@ for (edge in c(F,T)) {
     labs(y="Bias", x="S", color="Estimator")
   
   # Coverage plot
-  # Export: 10" x 6" (Cox_edge: 7" x 4")
   plot_c <- ggplot(filter(p_data, stat=="cov"), p_aes) +
     p_ribbon(df_distr_c) +
     geom_hline(aes(yintercept=0.95), linetype="longdash", color="grey") +
@@ -178,9 +176,9 @@ for (edge in c(F,T)) {
 
 
 
-########################################################.
-##### VIZ: Variance estimation (Cox paper), scaled #####
-########################################################.
+###################################################.
+##### Variance estimation (Cox paper), scaled #####
+###################################################.
 
 # Figures produced: se_est
 
@@ -279,9 +277,9 @@ ggsave(filename="se_est.pdf", plot=plot, device="pdf", width=10, height=6)
 
 
 
-#########################################.
-##### VIZ: Sample paths (Cox paper) #####
-#########################################.
+####################################.
+##### Sample paths (Cox paper) #####
+####################################.
 
 # Figures produced: sample_paths
 
@@ -372,5 +370,103 @@ if (F) {
     labs(y="Marginalized risk", x="S", color="")
   ggsave(filename="sample_paths.pdf", plot=plot,
          device="pdf", width=10, height=6)
+  
+}
+
+
+
+############################################.
+##### Coverage: bootstrap vs. analytic #####
+############################################.
+
+# Figures produced: bootstrap_vs_analytic
+
+for (edge in c(F,T)) {
+  
+  sim <- readRDS("SimEngine.out/estimation_4_20231114.rds")
+  
+  # Summarize results
+  summ_cov <- list()
+  for (i in c(1:51)) {
+    m <- format(round(i/50-0.02,2), nsmall=2)
+    summ_cov[[i]] <- list(
+      stat = "coverage",
+      name = paste0("cov_",m),
+      truth = paste0("r_M0_",m),
+      lower = paste0("ci_lo_",m),
+      upper = paste0("ci_up_",m)
+    )
+  }
+  
+  names(sim$results) <- gsub("_hi", "_up", names(sim$results))
+  
+  summ <- do.call(SimEngine::summarize, c(list(sim), summ_cov))
+  
+  p_data <- pivot_longer(
+    data = summ,
+    cols = -c(level_id,n,alpha_3,sc_params,distr_S,edge,n_reps,
+              surv_true,sampling,estimator,dir,wts_type,bootstrap),
+    names_to = c("stat","point"),
+    names_sep = "_"
+  )
+  p_data %<>% mutate(point = as.numeric(point))
+  
+  # Plot Y-axis limits
+  plot_lims <- c(0,1)
+  
+  # Set faceting vectors
+  surv_trues <- c("Linear", "Cubic", "S-shaped")
+  distr_Ss <- c("Unif(0,1)", "N(0.5,0.04)")
+  if (edge) {
+    surv_trues <- c("Linear", "Step")
+    distr_Ss <- "N(0.5,0.04)"
+  }
+  
+  # Orange 10/90 quantile lines
+  df_vlines <- data.frame(
+    x = c(qunif(0.1,0,1), qtruncnorm(0.1, a=0, b=1, mean=0.5, sd=0.2),
+          qunif(0.9,0,1), qtruncnorm(0.9, a=0, b=1, mean=0.5, sd=0.2)),
+    distr_S = rep(distr_Ss,2)
+  )
+  
+  # Grey background densities
+  df_distr_S <- data.frame(
+    x = rep(seq(0,1,0.01),2),
+    ymax = c(rep(1,101),
+             dtruncnorm(seq(0,1,0.01), a=0, b=1, mean=0.5, sd=0.2)),
+    distr_S = rep(distr_Ss, each=101),
+    value = 0
+  )
+  
+  df_distr_c <- mutate(df_distr_S, ymin=plot_lims[1],
+                       ymax=((ymax*diff(plot_lims))/6+plot_lims[1]))
+
+  p_data %<>% mutate(
+    surv_true = ifelse(surv_true=="Cox PH", "Linear", surv_true)
+  )
+  
+  # Set up facets
+  f_rows <- dplyr::vars(factor(distr_S, levels=distr_Ss))
+  f_cols <- dplyr::vars(factor(surv_true, levels=surv_trues))
+  
+  # Set up plot objects
+  p_aes <- aes(x=point, y=value, color=factor(bootstrap),
+               group=factor(bootstrap))
+  p_ribbon <- function(d) {
+    geom_ribbon(aes(x=x, ymin=ymin, ymax=ymax, color=NA, group=NA),
+                data=d, fill="grey", color=NA, alpha=0.4)
+  }
+  
+  # Coverage plot
+  plot <- ggplot(filter(p_data, stat=="cov"), p_aes) +
+    p_ribbon(df_distr_c) +
+    geom_hline(aes(yintercept=0.95), linetype="longdash", color="grey") +
+    geom_line() +
+    facet_grid(rows=f_rows, cols=f_cols) +
+    scale_y_continuous(labels=percent, limits=plot_lims) +
+    theme(legend.position="bottom") +
+    labs(y="Coverage (%)", x="S", color="bootstrap")
+  ggsave(filename="bootstrap_vs_analytic.pdf", plot=plot, device="pdf",
+         width=10, height=6)
   
 }

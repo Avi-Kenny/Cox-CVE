@@ -28,7 +28,8 @@ generate_data <- function(n, alpha_3, distr_S, edge, surv_true, sc_params,
   
   # Sample baseline covariates
   x <- data.frame(
-    x1 = sample(round(seq(0,1,0.1),1), size=n, replace=T),
+    # x1 = sample(round(seq(0,1,0.1),1), size=n, replace=T),
+    x1 = sample(round(seq(0,1,0.2),1), size=n, replace=T),
     x2 = rbinom(n, size=1, prob=0.5)
   )
   
@@ -65,8 +66,6 @@ generate_data <- function(n, alpha_3, distr_S, edge, surv_true, sc_params,
   }
   edge_val <- rbinom(n, size=1, prob=edge_probs)
   s <- (1-edge_val)*s
-  
-  # s <- round(s,2) # !!!!! TEMP
   
   # Generate event times
   {
@@ -137,14 +136,42 @@ generate_data <- function(n, alpha_3, distr_S, edge, surv_true, sc_params,
   # Construct dataframe
   dat_orig <- cbind(id=c(1:n), a=rep(1,n), x, y=y, delta=delta)
   
-  if (sampling=="iid") {
-    z <- rep(1,n)
-    dat_orig$s <- s
-  } else {
-    z <- rbinom(n, size=1, prob=Pi(sampling,delta,y,x))
-    dat_orig$s <- ifelse(z==1,s,NA)
+  # New sampling system (to more closely match actual case-cohort sampling)
+  # !!!!! Still Bernoulli sampling
+  # !!!!! Shortcutting Pi function
+  # !!!!! The `sampling` argument is currently ignored
+  tps_strata <- as.integer(factor(2*x$x2+x$x1))
+  subcohort <- sapply(c(1:n), function(i) {
+    x_i <- as.numeric(x[i,])
+    prob <- expit(x_i[1]+x_i[2]-1)
+    return(rbinom(1, size=1, prob=prob))
+  })
+  ev <- In(delta==1 & y<=C$t_0)
+  z <- round(ev + (1-ev)*subcohort)
+  w_strata <- as.integer(ifelse(ev, round(max(tps_strata)+1), tps_strata))
+  
+  # Calculate weights
+  w_strata_unique <- sort(unique(w_strata))
+  if (!identical(w_strata_unique,c(1:length(w_strata_unique)))) {
+    stop("Error creating strata variable")
   }
+  w_strata_probs <- sapply(w_strata_unique, function(str) {
+    num_in_stratum <- sum(w_strata==str)
+    num_selected <- sum(w_strata==str & z)
+    return(num_selected/num_in_stratum)
+  })
+  dat_orig$weights <- z / w_strata_probs[w_strata]
+
+  # # Conduct sampling
+  # if (sampling=="iid") {
+  #   z <- rep(1,n)
+  # } else {
+  #   z <- rbinom(n, size=1, prob=Pi(sampling,delta,y,x))
+  # }
+  dat_orig$s <- ifelse(z==1,s,NA)
   dat_orig$z <- z
+  
+  dat_orig$strata <- w_strata
   
   # Set up function to calculate true marginalized risk values over C$points
   # These are Monte Carlo approximations
@@ -237,15 +264,17 @@ generate_data <- function(n, alpha_3, distr_S, edge, surv_true, sc_params,
   # Add attributes to dataframe
   attr(dat_orig, "r_M0") <- r_M0_f(C$points)
   attr(dat_orig, "sampling") <- sampling
+  attr(dat_orig, "tps_strata") <- tps_strata # !!!!! Just added
+  attr(dat_orig, "subcohort") <- subcohort # !!!!! Just added
   
-  # Add (stabilized) inverse weights
-  wts_str <- wts(dat_orig, type=wts_type, return_strata=T)
-  dat_orig$weights <- wts_str$weights
-  dat_orig$strata <- wts_str$strata
+  # # Add (stabilized) inverse weights
+  # wts_str <- wts(dat_orig, type=wts_type, return_strata=T)
+  # dat_orig$weights <- wts_str$weights
+  # dat_orig$strata <- wts_str$strata
   
-  if (F) {
-    dat_orig$weights_true <- wts(dat_orig, type="true", return_strata=T)$weights
-  } # DEBUG: Return true weights in addition to estimated weights
+  # if (F) {
+  #   dat_orig$weights_true <- wts(dat_orig, type="true", return_strata=T)$weights
+  # } # DEBUG: Return true weights in addition to estimated weights
   
   return(dat_orig)
   

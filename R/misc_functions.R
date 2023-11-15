@@ -53,7 +53,7 @@ chk <- function(num, msg="") {
 
 
 
-#' Probability of sampling
+#' Probability of being sampled into subcohort
 #' 
 #' @param sampling One of c("iid", "two-phase (6%)", "two-phase (72%)",
 #'     "two-phase (70% random)", "two-phase (6% random)")
@@ -68,16 +68,8 @@ Pi <- function(sampling, delta, y, x) {
   
   if (sampling=="iid") {
     probs <- rep(1, length(delta))
-  } else if (sampling=="two-phase (70% random)") {
-    probs <- rep(0.7, length(delta))
-  } else if (sampling=="two-phase (50% random)") {
-    probs <- rep(0.5, length(delta))
   } else if (sampling=="two-phase (25% random)") {
     probs <- rep(0.25, length(delta))
-  } else if (sampling=="two-phase (6% random)") {
-    probs <- rep(0.06, length(delta))
-  } else if (sampling=="cycle") {
-    probs <- rep(c(0.8,0.6,0.4,0.2), length.out=length(delta))
   } else {
     ev <- In(delta==1 & y<=C$t_0) # !!!!!
     if (sampling=="two-phase (6%)") {
