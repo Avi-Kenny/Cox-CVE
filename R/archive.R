@@ -28,12 +28,12 @@ if (F) {
       
       # Calculate variance estimates
       s <- 0.5
-      res_cox <- cox_var(dat_orig=dat_orig, dat=dat, t=C$t_0, points=s,
+      res_cox <- cox_var(dat_orig=dat_orig, dat=dat, t=L$t_0, points=s,
                          se_beta=T, se_bshz=T, se_surv=T, se_marg=T)
       
-      res_cox <- cox_var(dat_orig=dat_orig, dat=dat, t=C$t_0, points=0.5, se_marg=T, verbose=T)
-      res_cox <- cox_var(dat_orig=dat_orig, dat=dat, t=C$t_0, points=c(0.2,0.5,0.8), se_marg=T, verbose=T)
-      res_cox <- cox_var(dat_orig=dat_orig, dat=dat, t=C$t_0, points=seq(0.1,0.9,0.1), se_marg=T, verbose=T)
+      res_cox <- cox_var(dat_orig=dat_orig, dat=dat, t=L$t_0, points=0.5, se_marg=T, verbose=T)
+      res_cox <- cox_var(dat_orig=dat_orig, dat=dat, t=L$t_0, points=c(0.2,0.5,0.8), se_marg=T, verbose=T)
+      res_cox <- cox_var(dat_orig=dat_orig, dat=dat, t=L$t_0, points=seq(0.1,0.9,0.1), se_marg=T, verbose=T)
       
       if (F) {
         z_0 <- c(0.3,1,0.5) # Needs to be consistent with the value in cox_var()
@@ -41,7 +41,7 @@ if (F) {
           L$sc_params$lmbd*exp(-1.7) * t^L$sc_params$v
         }
         true_lp <- sum(c(C$alpha_1,C$alpha_2,L$alpha_3)*z_0)
-        true_surv <- exp(-1*exp(true_lp)*H_0_true(C$t_0))
+        true_surv <- exp(-1*exp(true_lp)*H_0_true(L$t_0))
         true_marg <- 1-attr(dat_orig, "r_M0")[26] # Corresponds to A=0.5
       } # DEBUG: intermediate objects
       
@@ -57,7 +57,7 @@ if (F) {
         true_s = L$alpha_3,
         est_s = res_cox$beta_n[3],
         se_s = sqrt(res_cox$var_est_beta[3]),
-        true_bshz = H_0_true(C$t_0),
+        true_bshz = H_0_true(L$t_0),
         est_bshz = res_cox$est_bshz,
         se_est_bshz = sqrt(res_cox$var_est_bshz),
         true_surv = true_surv,
@@ -74,13 +74,13 @@ if (F) {
         # z_0 <- c(0.3,1,0.5) # c(W1,W2,A)
         # 
         # # Calculate the cumulative hazard via predict()
-        # newdata <- data.frame(y=C$t_0, delta=1, x1=z_0[1],
+        # newdata <- data.frame(y=L$t_0, delta=1, x1=z_0[1],
         #                       x2=z_0[2], s=z_0[3])
         # pred <- predict(res_cox$model, newdata=newdata, type="expected", se.fit=T)
         
         
         # Add additional results
-        # sim_res$true_cmhz = exp(true_lp) * H_0_true(C$t_0) # Should roughly equal pred$se.fit
+        # sim_res$true_cmhz = exp(true_lp) * H_0_true(L$t_0) # Should roughly equal pred$se.fit
         # sim_res$est_cmhz = exp(sum(res_cox$beta_n*z_0))*est_bshz # Should equal pred$fit
         # sim_res$est_surv = exp(-1*exp(sum(res_cox$beta_n*z_0))*est_bshz)
         # sim_res$se_cmhz_MC = sqrt(res_cox$var_cmhz_est)

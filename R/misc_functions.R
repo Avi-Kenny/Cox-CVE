@@ -71,7 +71,7 @@ Pi <- function(sampling, delta, y, x) {
   } else if (sampling=="two-phase (25% random)") {
     probs <- rep(0.25, length(delta))
   } else {
-    ev <- In(delta==1 & y<=C$t_0) # !!!!!
+    ev <- In(delta==1 & y<=L$t_0) # !!!!!
     if (sampling=="two-phase (6%)") {
       probs <- ev + (1-ev)*expit(x$x1+x$x2-3.85)
     } else if (sampling=="two-phase (72%)") {

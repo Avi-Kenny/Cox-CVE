@@ -7,12 +7,12 @@
 #'     confidence bands
 bootstrap_ses <- function(dat_orig, n_boot) {
   
-  # Objects to hold replicates
+  # Objects to hold replicate info
   ests_boot <- matrix(nrow=n_boot, ncol=length(C$points))
+  num_succ <- 0
+  num_errs <- 0
   
   for (i in c(1:n_boot)) {
-    
-    print(paste("Rep:",i)) # !!!!!
     
     # Create resampled data object
     {
@@ -55,30 +55,44 @@ bootstrap_ses <- function(dat_orig, n_boot) {
       weights="weights", ph2="z", data=dat_orig_resampled
     )
     
-    ests <- vaccine::est_ce(
-      dat = dat,
-      type = "Cox",
-      t_0 = C$t_0,
-      s_out = C$points,
-      ci_type = "none",
-      params_cox = params_ce_cox(spline_df = L$estimator$spline_df,
-                                 edge_ind = L$estimator$edge_ind)
+    tryCatch(
+      expr = {
+        ests <- vaccine::est_ce(
+          dat = dat,
+          type = "Cox",
+          t_0 = L$t_0,
+          s_out = C$points,
+          ci_type = "none",
+          params_cox = params_ce_cox(spline_df = L$estimator$spline_df,
+                                     edge_ind = L$estimator$edge_ind)
+        )
+        ests_boot[i,] <- ests$cr$est
+        num_succ <- num_succ + 1
+      },
+      error = function(e) {
+        num_errs <<- num_errs + 1
+      }
     )
-
-    ests_boot[i,] <- ests$cr$est
-
+    
   }
   
   ci_lower <- ci_upper <- rep(NA, length(C$points))
   for (i in c(1:length(C$points))) {
-    lims <- as.numeric(quantile(ests_boot[,i], probs=c(0.025,0.975)))
+    lims <- as.numeric(quantile(ests_boot[,i], probs=c(0.025,0.975), na.rm=T))
     ci_lower[i] <- lims[1]
     ci_upper[i] <- lims[2]
   }
   
+  if (!(num_succ+num_errs==n_boot)) {
+    stop(paste0("num_succ: ", num_succ, ", num_errs: ", num_errs, ", n_boot: ",
+                n_boot, "."))
+  }
+  
   return(list(
     ci_lower = ci_lower,
-    ci_upper = ci_upper
+    ci_upper = ci_upper,
+    num_succ = num_succ,
+    num_errs = num_errs
   ))
   
 }

@@ -135,7 +135,7 @@ generate_data <- function(n, alpha_3, distr_S, edge, surv_true, sc_params,
   
   # Construct dataframe
   dat_orig <- cbind(id=c(1:n), a=rep(1,n), x, y=y, delta=delta)
-  
+
   # New sampling system (to more closely match actual case-cohort sampling)
   # !!!!! Still Bernoulli sampling
   # !!!!! Shortcutting Pi function
@@ -146,7 +146,7 @@ generate_data <- function(n, alpha_3, distr_S, edge, surv_true, sc_params,
     prob <- expit(x_i[1]+x_i[2]-1)
     return(rbinom(1, size=1, prob=prob))
   })
-  ev <- In(delta==1 & y<=C$t_0)
+  ev <- In(delta==1 & y<=L$t_0)
   z <- round(ev + (1-ev)*subcohort)
   w_strata <- as.integer(ifelse(ev, round(max(tps_strata)+1), tps_strata))
   
@@ -177,7 +177,8 @@ generate_data <- function(n, alpha_3, distr_S, edge, surv_true, sc_params,
   # These are Monte Carlo approximations
   {
     m <- 10^5 # 10^6
-    x1 <- sample(round(seq(0,1,0.1),1), size=m, replace=T)
+    # x1 <- sample(round(seq(0,1,0.1),1), size=m, replace=T)
+    x1 <- sample(round(seq(0,1,0.2),1), size=m, replace=T)
     x2 <- rbinom(m, size=1, prob=0.5)
     
     lin <- function(x1,x2,s) {
@@ -230,7 +231,7 @@ generate_data <- function(n, alpha_3, distr_S, edge, surv_true, sc_params,
       Q_0 <- function(t, x1, x2, s) { exp(-1*sc_params$lmbd*t) }
     }
     
-    r_M0_f <- Vectorize(function(s) { 1 - mean(Q_0(C$t_0,x1,x2,s)) })
+    r_M0_f <- Vectorize(function(s) { 1 - mean(Q_0(L$t_0,x1,x2,s)) })
     
     # Note: Uncomment this to return true Theta_true
     #       Only holds if S and X are independent
@@ -253,7 +254,7 @@ generate_data <- function(n, alpha_3, distr_S, edge, surv_true, sc_params,
       }
       
       Gamma_true_f <- Vectorize(function(u) {
-        mean( In(s<=u) * (1-Q_0(C$t_0,x1,x2,s)) )
+        mean( In(s<=u) * (1-Q_0(L$t_0,x1,x2,s)) )
       })
       attr(dat_orig, "Gamma_true") <- Gamma_true_f(C$points)
       

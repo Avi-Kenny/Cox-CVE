@@ -45,18 +45,15 @@ for (edge in c(F,T)) {
   summ_metrics <- c(summ_bias, summ_sd, summ_cov)
   summ <- do.call(SimEngine::summarize, c(list(sim), summ_metrics))
   
-  summ %<>% rename("Estimator"=estimator)
-  
   p_data <- pivot_longer(
     data = summ,
-    cols = -c(level_id,n,alpha_3,sc_params,distr_S,edge,
-              surv_true,sampling,Estimator,dir,wts_type),
-    # cols = -c(level_id,n,alpha_3,sc_params,distr_S,edge,n_reps,
-    #           surv_true,sampling,Estimator,dir,wts_type,use_package),
+    cols = -c("level_id", "n_reps", names(sim$levels)), # "mean_num_events"
     names_to = c("stat","point"),
     names_sep = "_"
   )
   p_data %<>% mutate(point = as.numeric(point))
+  
+  p_data %<>% rename("Estimator"=estimator)
   
   # Plot Y-axis limits
   plot_lims <- list(b=c(-0.25,0.25), c=c(0,1), m=c(0,0.02),
@@ -70,13 +67,6 @@ for (edge in c(F,T)) {
     surv_trues <- c("Linear", "Step")
     distr_Ss <- "N(0.5,0.04)"
   }
-  
-  # Orange 10/90 quantile lines
-  df_vlines <- data.frame(
-    x = c(qunif(0.1,0,1), qtruncnorm(0.1, a=0, b=1, mean=0.5, sd=0.2),
-          qunif(0.9,0,1), qtruncnorm(0.9, a=0, b=1, mean=0.5, sd=0.2)),
-    distr_S = rep(distr_Ss,2)
-  )
   
   # Grey background densities
   if (edge) {
@@ -102,7 +92,6 @@ for (edge in c(F,T)) {
     df_distr_S %<>% mutate(
       ymax = ifelse(x<0.1, 10*mass, (1-mass)*df_distr_S$ymax)
     )
-    df_vlines <- df_vlines[4:6,]
   }
   df_distr_b <- mutate(df_distr_S, ymin=plot_lims$b[1],
                        ymax=((ymax*diff(plot_lims$b))/6+plot_lims$b[1]))
@@ -206,10 +195,7 @@ summ <- do.call(SimEngine::summarize, c(list(sim), summ_metrics))
 
 p_data <- pivot_longer(
   data = summ,
-  # cols = -c(level_id,n,alpha_3,sc_params,distr_S,edge,return_se,n_reps,
-  #           surv_true,sampling,estimator,dir,wts_type,use_package),
-  cols = -c(level_id,n,alpha_3,sc_params,distr_S,edge,return_se,n_reps,
-            surv_true,sampling,estimator,dir,wts_type),
+  cols = -c("level_id", "n_reps", names(sim$levels)), # "mean_num_events"
   names_to = c("stat","point"),
   names_sep = "_"
 )
@@ -221,13 +207,6 @@ plot_lims <- list(s=c(0,1.3))
 # Set faceting vectors
 surv_trues <- c("Linear", "Cubic", "S-shaped")
 distr_Ss <- c("Unif(0,1)", "N(0.5,0.04)")
-
-# Orange 10/90 quantile lines
-df_vlines <- data.frame(
-  x = c(qunif(0.1,0,1), qtruncnorm(0.1, a=0, b=1, mean=0.5, sd=0.2),
-        qunif(0.9,0,1), qtruncnorm(0.9, a=0, b=1, mean=0.5, sd=0.2)),
-  distr_S = rep(distr_Ss,2)
-)
 
 # Grey background densities
 df_distr_S <- data.frame(
@@ -375,98 +354,149 @@ if (F) {
 
 
 
-############################################.
-##### Coverage: bootstrap vs. analytic #####
-############################################.
+#############################################.
+##### Comparison to bootstrap: coverage #####
+#############################################.
 
-# Figures produced: bootstrap_vs_analytic
+# Figures produced: bootstrap_comp_coverage
 
-for (edge in c(F,T)) {
-  
-  sim <- readRDS("SimEngine.out/estimation_4_20231114.rds")
-  
-  # Summarize results
-  summ_cov <- list()
-  for (i in c(1:51)) {
-    m <- format(round(i/50-0.02,2), nsmall=2)
-    summ_cov[[i]] <- list(
-      stat = "coverage",
-      name = paste0("cov_",m),
-      truth = paste0("r_M0_",m),
-      lower = paste0("ci_lo_",m),
-      upper = paste0("ci_up_",m)
-    )
-  }
-  
-  names(sim$results) <- gsub("_hi", "_up", names(sim$results))
-  
-  summ <- do.call(SimEngine::summarize, c(list(sim), summ_cov))
-  
-  p_data <- pivot_longer(
-    data = summ,
-    cols = -c(level_id,n,alpha_3,sc_params,distr_S,edge,n_reps,
-              surv_true,sampling,estimator,dir,wts_type,bootstrap),
-    names_to = c("stat","point"),
-    names_sep = "_"
-  )
-  p_data %<>% mutate(point = as.numeric(point))
-  
-  # Plot Y-axis limits
-  plot_lims <- c(0,1)
-  
-  # Set faceting vectors
-  surv_trues <- c("Linear", "Cubic", "S-shaped")
-  distr_Ss <- c("Unif(0,1)", "N(0.5,0.04)")
-  if (edge) {
-    surv_trues <- c("Linear", "Step")
-    distr_Ss <- "N(0.5,0.04)"
-  }
-  
-  # Orange 10/90 quantile lines
-  df_vlines <- data.frame(
-    x = c(qunif(0.1,0,1), qtruncnorm(0.1, a=0, b=1, mean=0.5, sd=0.2),
-          qunif(0.9,0,1), qtruncnorm(0.9, a=0, b=1, mean=0.5, sd=0.2)),
-    distr_S = rep(distr_Ss,2)
-  )
-  
-  # Grey background densities
-  df_distr_S <- data.frame(
-    x = rep(seq(0,1,0.01),2),
-    ymax = c(rep(1,101),
-             dtruncnorm(seq(0,1,0.01), a=0, b=1, mean=0.5, sd=0.2)),
-    distr_S = rep(distr_Ss, each=101),
-    value = 0
-  )
-  
-  df_distr_c <- mutate(df_distr_S, ymin=plot_lims[1],
-                       ymax=((ymax*diff(plot_lims))/6+plot_lims[1]))
+sim <- readRDS("SimEngine.out/estimation_4_20231116.2.rds")
 
-  p_data %<>% mutate(
-    surv_true = ifelse(surv_true=="Cox PH", "Linear", surv_true)
+summ_cov <- list()
+for (i in c(1:51)) {
+  m <- format(round(i/50-0.02,2), nsmall=2)
+  summ_cov[[i]] <- list(
+    stat = "coverage",
+    name = paste0("cov_",m),
+    truth = paste0("r_M0_",m),
+    lower = paste0("ci_lo_",m),
+    upper = paste0("ci_up_",m),
+    na.rm = T # !!!!!
   )
-  
-  # Set up facets
-  f_rows <- dplyr::vars(factor(distr_S, levels=distr_Ss))
-  f_cols <- dplyr::vars(factor(surv_true, levels=surv_trues))
-  
-  # Set up plot objects
-  p_aes <- aes(x=point, y=value, color=factor(bootstrap),
-               group=factor(bootstrap))
-  p_ribbon <- function(d) {
-    geom_ribbon(aes(x=x, ymin=ymin, ymax=ymax, color=NA, group=NA),
-                data=d, fill="grey", color=NA, alpha=0.4)
-  }
-  
-  # Coverage plot
-  plot <- ggplot(filter(p_data, stat=="cov"), p_aes) +
-    p_ribbon(df_distr_c) +
-    geom_hline(aes(yintercept=0.95), linetype="longdash", color="grey") +
-    geom_line() +
-    facet_grid(rows=f_rows, cols=f_cols) +
-    scale_y_continuous(labels=percent, limits=plot_lims) +
-    theme(legend.position="bottom") +
-    labs(y="Coverage (%)", x="S", color="bootstrap")
-  ggsave(filename="bootstrap_vs_analytic.pdf", plot=plot, device="pdf",
-         width=10, height=6)
-  
 }
+summ_other <- list(
+  list(stat="mean", x="runtime", name="runtime"),
+  list(stat="mean", x="num_events", name="num_events"),
+  list(stat="mean", x="num_succ", name="num_succ"),
+  list(stat="mean", x="num_errs", name="num_errs")
+)
+
+summ <- do.call(SimEngine::summarize, c(list(sim),c(summ_cov, summ_other)))
+
+# # Coverage
+# summ[,c(1,3,6,7,13,16,17,26,36,46,56,66,76)] %>% arrange(sc_params, distr_S, bootstrap)
+
+p_data <- pivot_longer(
+  data = summ,
+  cols = -c("level_id", "n_reps", names(sim$levels), "runtime", "num_events",
+            "num_succ", "num_errs"),
+  names_to = c("stat","point"),
+  names_sep = "_"
+)
+p_data %<>% mutate(point = as.numeric(point))
+
+# Set faceting vectors
+distr_Ss <- c("Unif(0,1)", "N(0.5,0.04)")
+
+# Set up facets
+f_cols <- dplyr::vars(factor(distr_S, levels=distr_Ss))
+
+p_data %<>% dplyr::filter(point==0.5)
+p_data %<>% dplyr::mutate(
+  bootstrap = ifelse(bootstrap, "Bootstrap", "Analytic"),
+  num_events = case_when(
+    sc_params=="lmbd_23" & distr_S=="Unif(0,1)" ~ 9.9,
+    sc_params=="lmbd_23" & distr_S=="N(0.5,0.04)" ~ 9.2,
+    sc_params=="lmbd_24" & distr_S=="Unif(0,1)" ~ 19.6,
+    sc_params=="lmbd_24" & distr_S=="N(0.5,0.04)" ~ 18.2,
+    sc_params=="lmbd_25" & distr_S=="Unif(0,1)" ~ 38.4,
+    sc_params=="lmbd_25" & distr_S=="N(0.5,0.04)" ~ 35.1,
+    sc_params=="lmbd_26" & distr_S=="Unif(0,1)" ~ 72.2,
+    sc_params=="lmbd_26" & distr_S=="N(0.5,0.04)" ~ 67.5,
+    sc_params=="lmbd_27" & distr_S=="Unif(0,1)" ~ 133.4,
+    sc_params=="lmbd_27" & distr_S=="N(0.5,0.04)" ~ 126.7
+  )
+)
+
+# Coverage plot
+plot <- ggplot(
+  p_data,
+  aes(x=num_events, y=value, color=factor(bootstrap),
+      group=factor(bootstrap))) +
+  geom_hline(aes(yintercept=0.95), linetype="longdash", color="grey") +
+  geom_line() +
+  facet_grid(cols=f_cols) +
+  scale_y_continuous(labels=percent, limits=c(0.7,1)) +
+  theme(legend.position="bottom") +
+  labs(y="Coverage (%)", x="Expected number of events", color=NULL)
+ggsave(filename="bootstrap_comp_coverage.pdf", plot=plot, device="pdf",
+       width=6, height=3.5)
+
+
+
+#############################################.
+##### Comparison to bootstrap: CI width #####
+#############################################.
+
+# Figures produced: bootstrap_comp_ci_width
+
+sim <- readRDS("SimEngine.out/estimation_4_20231116.2.rds")
+
+for (i in c(1:51)) {
+  m <- format(round(i/50-0.02,2), nsmall=2)
+  sim$results[,paste0("ciwd_",m)] <- sim$results[,paste0("ci_up_",m)] -
+    sim$results[,paste0("ci_lo_",m)]
+}
+summ <- sim %>% SimEngine::summarize(
+  list(stat="mean", x="ciwd_0.20", name="ciwd_0.20", na.rm=T),
+  list(stat="mean", x="ciwd_0.50", name="ciwd_0.50", na.rm=T),
+  list(stat="mean", x="ciwd_0.80", name="ciwd_0.80", na.rm=T)
+)
+
+p_data <- pivot_longer(
+  data = summ,
+  cols = -c("level_id", "n_reps", names(sim$levels)),
+  names_to = c("stat","point"),
+  names_sep = "_"
+)
+p_data %<>% mutate(point = as.numeric(point))
+
+# Set faceting vectors
+distr_Ss <- c("Unif(0,1)", "N(0.5,0.04)")
+
+# Set limits
+p_lims <- list(x=c(0,150), y=c(0,0.04))
+
+# Set up facets
+f_cols <- dplyr::vars(factor(distr_S, levels=distr_Ss))
+
+p_data %<>% dplyr::filter(point==0.5)
+p_data %<>% dplyr::mutate(
+  bootstrap = ifelse(bootstrap, "Bootstrap", "Analytic"),
+  num_events = case_when(
+    sc_params=="lmbd_23" & distr_S=="Unif(0,1)" ~ 9.9,
+    sc_params=="lmbd_23" & distr_S=="N(0.5,0.04)" ~ 9.2,
+    sc_params=="lmbd_24" & distr_S=="Unif(0,1)" ~ 19.6,
+    sc_params=="lmbd_24" & distr_S=="N(0.5,0.04)" ~ 18.2,
+    sc_params=="lmbd_25" & distr_S=="Unif(0,1)" ~ 38.4,
+    sc_params=="lmbd_25" & distr_S=="N(0.5,0.04)" ~ 35.1,
+    sc_params=="lmbd_26" & distr_S=="Unif(0,1)" ~ 72.2,
+    sc_params=="lmbd_26" & distr_S=="N(0.5,0.04)" ~ 67.5,
+    sc_params=="lmbd_27" & distr_S=="Unif(0,1)" ~ 133.4,
+    sc_params=="lmbd_27" & distr_S=="N(0.5,0.04)" ~ 126.7
+  )
+)
+
+# CI width plot
+plot <- ggplot(
+  p_data,
+  aes(x=num_events, y=value, color=factor(bootstrap),
+      group=factor(bootstrap))) +
+  geom_line() +
+  facet_grid(cols=f_cols) +
+  ylim(p_lims$y) +
+  xlim(p_lims$x) +
+  theme(legend.position="bottom") +
+  labs(y="Confidence interval width", x="Expected number of events", color=NULL)
+ggsave(filename="bootstrap_comp_ci_width.pdf", plot=plot, device="pdf",
+       width=6, height=3.5)

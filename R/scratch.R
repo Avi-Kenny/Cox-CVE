@@ -1,37 +1,32 @@
 # Bootstrap testing
 if (F) {
   
-  # Used: Trt
-  
-  dat <- read.csv("C:/Users/avike/OneDrive/Desktop/Avi/Research/Immune correlates pipeline/Figures + Tables/Moderna data/P3001ModernaCOVEimmunemarkerdata_correlates_processed_v1.1_lvmn_added_Jan14_2022.csv")
-  nrow(dat)
-  dat <- dat[dat$Trt==1,]
-  nrow(dat)
-  dat <- dat[dat$Perprotocol==1,]
-  nrow(dat)
-  dat <- dat[dat$ph1.D29==1,]
-  nrow(dat)
-  
-  # Unused
-  Bserostatus
-  Perprotocol
-  EventIndPrimaryD29
-  SubcohortInd
-  tps.stratum
-  Wstratum
-  TwophasesampIndD29
-  wt.D29
-  ph1.D29
-  ph2.D29
-  
-  xtabs(~Wstratum, data=dat)
-  xtabs(~tps.stratum, data=dat)
-  xtabs(~Wstratum+tps.stratum, data=dat)
-  xtabs(~Wstratum+tps.stratum+EventIndPrimaryD29, data=dat)
-  
-  
-  tmp <- with(dat, table(Wstratum, ph2.D29))
-  weights <- rowSums(tmp)/tmp[,2]
+  for (i in c(1:5)) {
+    
+    L <- list(
+      n = 1000,
+      t_0 = 200,
+      alpha_3 = -2,
+      dir = "decr",
+      sc_params = list(lmbd=1.16e-6, v=1.5, lmbd2=5e-5, v2=1.5),
+      distr_S = "Unif(0,1)",
+      edge = "none",
+      surv_true = "Cox PH",
+      sampling = "two-phase (50%)",
+      wts_type = "estimated",
+      estimator = list(spline_df=1, edge_ind=F),
+      bootstrap = c(F,T)
+    )
+    
+    dat_orig <- generate_data(L$n, L$alpha_3, L$distr_S, L$edge, L$surv_true,
+                              L$sc_params, L$sampling, L$dir, L$wts_type)
+    dat_orig$delta2 <- dat_orig$delta * In(dat_orig$y<=L$t_0)
+    
+    print(paste0("Size of phase-two sample: ", sum(dat_orig$z)))
+    print(paste0("Number of events: ", sum(dat_orig$delta)))
+    print(paste0("Number of events (less than t_0): ", sum(dat_orig$delta2)))
+    
+  }
   
 }
 

@@ -19,7 +19,7 @@ if (cfg$sim_which=="estimation") {
     # Generate dataset
     dat_orig <- generate_data(L$n, L$alpha_3, L$distr_S, L$edge, L$surv_true,
                               L$sc_params, L$sampling, L$dir, L$wts_type)
-
+    
     # Load data into correct format
     dat <- load_data(
       time="y", event="delta", vacc="a", marker="s", covariates=c("x1","x2"),
@@ -31,7 +31,7 @@ if (cfg$sim_which=="estimation") {
     ests <- vaccine::est_ce(
       dat = dat,
       type = "Cox",
-      t_0 = C$t_0,
+      t_0 = L$t_0,
       s_out = C$points,
       ci_type = ci_type,
       params_cox = params_ce_cox(spline_df = L$estimator$spline_df,
@@ -39,7 +39,6 @@ if (cfg$sim_which=="estimation") {
     )
     if (L$bootstrap) {
       b_ests <- bootstrap_ses(dat_orig, n_boot=1000)
-      # b_ests <- bootstrap_ses(dat_orig, n_boot=100) # !!!!!
       ests$cr$ci_lower <- b_ests$ci_lower
       ests$cr$ci_upper <- b_ests$ci_upper
     }
@@ -54,6 +53,17 @@ if (cfg$sim_which=="estimation") {
       res_list[paste0("ci_lo_",m)] <- ests$cr$ci_lower[i]
       res_list[paste0("ci_up_",m)] <- ests$cr$ci_upper[i]
       if (!is.null(L$return_se)) { res_list[paste0("se_",m)] <- ests$cr$se[i] }
+    }
+    
+    if (!is.null(L$return_num_events) && L$return_num_events) {
+      res_list$num_events <- sum(dat$delta)
+      if (L$bootstrap) {
+        res_list$num_succ <- b_ests$num_succ
+        res_list$num_errs <- b_ests$num_errs
+      } else {
+        res_list$num_succ <- NA
+        res_list$num_errs <- NA
+      }
     }
     
     return(res_list)
