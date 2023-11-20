@@ -1,3 +1,61 @@
+# TEMP bootstrap viz
+if (F) {
+  
+  ppp <- 0.5
+  # sim=readRDS("sim.rds")
+  summ_cov <- list()
+  for (i in c(1:51)) {
+    m <- format(round(i/50-0.02,2), nsmall=2)
+    summ_cov[[i]] <- list(
+      stat = "coverage",
+      name = paste0("cov_",m),
+      truth = paste0("r_M0_",m),
+      lower = paste0("ci_lo_",m),
+      upper = paste0("ci_up_",m),
+      na.rm = T # !!!!!
+    )
+  }
+  summ_other <- list(
+    list(stat="mean", x="runtime", name="runtime"),
+    list(stat="mean", x="num_events", name="num_events"),
+    list(stat="mean", x="num_succ", name="num_succ"),
+    list(stat="mean", x="num_errs", name="num_errs")
+  )
+  
+  summ <- do.call(SimEngine::summarize, c(list(sim),c(summ_cov, summ_other)))
+  
+  p_data <- pivot_longer(
+    data = summ,
+    cols = -c("level_id", "n_reps", names(sim$levels), "runtime", "num_events",
+              "num_succ", "num_errs"),
+    names_to = c("stat","point"),
+    names_sep = "_"
+  )
+  p_data %<>% mutate(point = as.numeric(point))
+  
+  # Set faceting vectors
+  distr_Ss <- c("Unif(0,1)", "N(0.5,0.04)")
+  
+  p_data %<>% dplyr::filter(point==ppp)
+  p_data %<>% dplyr::mutate(
+    bootstrap = ifelse(bootstrap, "Bootstrap", "Analytic")
+  )
+  
+  # Coverage plot
+  plot <- ggplot(
+    p_data,
+    aes(x=t_0, y=value, color=bootstrap,
+        group=bootstrap)) +
+    geom_hline(aes(yintercept=0.95), linetype="longdash", color="grey") +
+    geom_line() +
+    facet_wrap(~sc_params) +
+    scale_y_continuous(labels=percent) +
+    theme(legend.position="bottom") +
+    labs(y="Coverage (%)", x="t_0", color=NULL, title=paste("Point:", ppp))
+  print(plot)
+
+}
+
 # Bootstrap testing
 if (F) {
   
