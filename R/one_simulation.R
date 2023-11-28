@@ -57,7 +57,7 @@ if (cfg$sim_which=="estimation") {
     
     if (!is.null(L$return_num_events) && L$return_num_events) {
       res_list$num_events <- sum(dat$delta)
-      res_list$num_events2 <- sum(dat$delta*dat$y<=L$t_0)
+      res_list$num_events2 <- sum(dat$delta*In(dat$y<=L$t_0))
       if (L$bootstrap) {
         res_list$num_succ <- b_ests$num_succ
         res_list$num_errs <- b_ests$num_errs

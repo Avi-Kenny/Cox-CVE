@@ -1,7 +1,4 @@
-# Run or update
-cfg$run_or_update <- "run"
-
-if (cfg$run_or_update=="run") {
+if (cfg$sim_run_or_update=="run") {
   
   run_on_cluster(
     
@@ -35,7 +32,7 @@ if (cfg$run_or_update=="run") {
     
   )
   
-} else if (cfg$run_or_update=="update") {
+} else if (cfg$sim_run_or_update=="update") {
   
   update_sim_on_cluster(
     

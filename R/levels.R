@@ -77,24 +77,31 @@ if (cfg$run_sims && Sys.getenv("sim_run") %in% c("first", "")) {
   # Figures: bootstrap_vs_analytic
   level_sets[["estimation_4"]] <- list(
     n = 1000,
+    # n = c(1000,4000), # !!!!!
     t_0 = 200,
+    # t_0 = c(200,500),
     alpha_3 = -2,
     dir = "decr",
     sc_params = list(
-      "lmbd_23" = list(lmbd=1.16e-6, v=1.5, lmbd2=5e-5, v2=1.5),
-      "lmbd_24" = list(lmbd=2.32e-6, v=1.5, lmbd2=5e-5, v2=1.5),
-      "lmbd_25" = list(lmbd=4.64e-6, v=1.5, lmbd2=5e-5, v2=1.5),
-      "lmbd_26" = list(lmbd=9.28e-6, v=1.5, lmbd2=5e-5, v2=1.5),
-      "lmbd_27" = list(lmbd=1.86e-5, v=1.5, lmbd2=5e-5, v2=1.5)
-      # "lmbd_28" = list(lmbd=1.16e-6, v=1.6, lmbd2=5e-5, v2=1.5),
-      # "lmbd_29" = list(lmbd=1.86e-5, v=1.6, lmbd2=5e-5, v2=1.5),
-      # "lmbd_30" = list(lmbd=1.16e-6, v=1.4, lmbd2=5e-5, v2=1.5),
-      # "lmbd_31" = list(lmbd=1.86e-5, v=1.4, lmbd2=5e-5, v2=1.5)
+      "lmbd_23" = list(lmbd=1.16e-6, v=1.5, lmbd2=5e-5, v2=1.5), # Main
+      # "lmbd_24" = list(lmbd=2.32e-6, v=1.5, lmbd2=5e-5, v2=1.5), # Main
+      "lmbd_25" = list(lmbd=4.64e-6, v=1.5, lmbd2=5e-5, v2=1.5), # Main
+      # "lmbd_26" = list(lmbd=9.28e-6, v=1.5, lmbd2=5e-5, v2=1.5), # Main
+      # "lmbd_27" = list(lmbd=1.86e-5, v=1.5, lmbd2=5e-5, v2=1.5),  # Main
+      "lmbd_32" = list(lmbd=3.72e-5, v=1.5, lmbd2=5e-5, v2=1.5) # Main
+      
+      # "lmbd_28" = list(lmbd=1.16e-6, v=1.6, lmbd2=5e-5, v2=1.5), # Alternate v1
+      # "lmbd_29" = list(lmbd=1.86e-5, v=1.6, lmbd2=5e-5, v2=1.5), # Alternate v1
+      # "lmbd_30" = list(lmbd=1.16e-6, v=1.4, lmbd2=5e-5, v2=1.5), # Alternate v1
+      # "lmbd_31" = list(lmbd=1.86e-5, v=1.4, lmbd2=5e-5, v2=1.5) # Alternate v1
+      
+      
+
     ),
-    distr_S = c("Unif(0,1)", "N(0.5,0.04)"),
+    # distr_S = c("Unif(0,1)", "N(0.5,0.04)"),
+    distr_S = "Unif(0,1)", # !!!!!
     edge = "none",
     surv_true = "Cox PH",
-    # surv_true = c("Cox PH", "S-shaped", "Cubic"),
     sampling = "two-phase (50%)",
     wts_type = "estimated",
     estimator = list("Cox (basic)" = list(spline_df=1, edge_ind=F)),

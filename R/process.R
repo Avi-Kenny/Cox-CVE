@@ -360,7 +360,7 @@ if (F) {
 
 # Figures produced: bootstrap_comp_coverage
 
-sim <- readRDS("SimEngine.out/estimation_4_20231116.2.rds")
+sim <- readRDS("SimEngine.out/estimation_4_20231122.rds")
 
 summ_cov <- list()
 for (i in c(1:51)) {
@@ -414,7 +414,9 @@ p_data %<>% dplyr::mutate(
     sc_params=="lmbd_26" & distr_S=="Unif(0,1)" ~ 72.2,
     sc_params=="lmbd_26" & distr_S=="N(0.5,0.04)" ~ 67.5,
     sc_params=="lmbd_27" & distr_S=="Unif(0,1)" ~ 133.4,
-    sc_params=="lmbd_27" & distr_S=="N(0.5,0.04)" ~ 126.7
+    sc_params=="lmbd_27" & distr_S=="N(0.5,0.04)" ~ 126.7,
+    sc_params=="lmbd_32" & distr_S=="Unif(0,1)" ~ 230.1,
+    sc_params=="lmbd_32" & distr_S=="N(0.5,0.04)" ~ 222.1
   )
 )
 
@@ -440,7 +442,7 @@ ggsave(filename="bootstrap_comp_coverage.pdf", plot=plot, device="pdf",
 
 # Figures produced: bootstrap_comp_ci_width
 
-sim <- readRDS("SimEngine.out/estimation_4_20231116.2.rds")
+sim <- readRDS("SimEngine.out/estimation_4_20231122.rds")
 
 for (i in c(1:51)) {
   m <- format(round(i/50-0.02,2), nsmall=2)
@@ -483,7 +485,9 @@ p_data %<>% dplyr::mutate(
     sc_params=="lmbd_26" & distr_S=="Unif(0,1)" ~ 72.2,
     sc_params=="lmbd_26" & distr_S=="N(0.5,0.04)" ~ 67.5,
     sc_params=="lmbd_27" & distr_S=="Unif(0,1)" ~ 133.4,
-    sc_params=="lmbd_27" & distr_S=="N(0.5,0.04)" ~ 126.7
+    sc_params=="lmbd_27" & distr_S=="N(0.5,0.04)" ~ 126.7,
+    sc_params=="lmbd_32" & distr_S=="Unif(0,1)" ~ 230.1,
+    sc_params=="lmbd_32" & distr_S=="N(0.5,0.04)" ~ 222.1
   )
 )
 
@@ -494,8 +498,8 @@ plot <- ggplot(
       group=factor(bootstrap))) +
   geom_line() +
   facet_grid(cols=f_cols) +
-  ylim(p_lims$y) +
-  xlim(p_lims$x) +
+  # ylim(p_lims$y) +
+  # xlim(p_lims$x) +
   theme(legend.position="bottom") +
   labs(y="Confidence interval width", x="Expected number of events", color=NULL)
 ggsave(filename="bootstrap_comp_ci_width.pdf", plot=plot, device="pdf",
