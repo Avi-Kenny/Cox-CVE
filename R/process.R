@@ -1,3 +1,12 @@
+#################.
+##### Setup #####
+#################.
+
+cb_colors <- c("#E69F00", "#56B4E9", "#009E73", "#CC79A7",
+               "#0072B2", "#D55E00", "#F0E442", "#999999")
+
+
+
 ####################################.
 ##### Estimation (bias,cov,sd) #####
 ####################################.
@@ -14,7 +23,7 @@ for (edge in c(F,T)) {
   }
   
   # Summarize results
-  summ_bias <- summ_sd <- summ_cov <- list()
+  summ_bias <- summ_sd <- summ_cov <- summ_mse <- list()
   for (i in c(1:51)) {
     m <- format(round(i/50-0.02,2), nsmall=2)
     summ_bias[[i]] <- list(
@@ -38,11 +47,18 @@ for (edge in c(F,T)) {
       upper = paste0("ci_up_",m)
       # na.rm = T
     )
+    summ_mse[[i]] <- list(
+      stat = "mse",
+      name = paste0("mse_",m),
+      estimate = paste0("r_Mn_",m),
+      truth = paste0("r_M0_",m)
+      # na.rm = T
+    )
   }
   
   names(sim$results) <- gsub("_hi", "_up", names(sim$results))
   
-  summ_metrics <- c(summ_bias, summ_sd, summ_cov)
+  summ_metrics <- c(summ_bias, summ_sd, summ_cov, summ_mse)
   summ <- do.call(SimEngine::summarize, c(list(sim), summ_metrics))
   
   p_data <- pivot_longer(
@@ -56,7 +72,7 @@ for (edge in c(F,T)) {
   p_data %<>% rename("Estimator"=estimator)
   
   # Plot Y-axis limits
-  plot_lims <- list(b=c(-0.25,0.25), c=c(0,1), m=c(0,0.02),
+  plot_lims <- list(b=c(-0.25,0.25), c=c(0,1), m=c(0,0.03),
                     v=c(0,0.01), s=c(0,0.15))
   # if (edge) { plot_lims$b <- c(-0.3,0.3) }
   
@@ -99,9 +115,19 @@ for (edge in c(F,T)) {
                        ymax=((ymax*diff(plot_lims$c))/6+plot_lims$c[1]))
   df_distr_s <- mutate(df_distr_S, ymin=plot_lims$s[1],
                        ymax=((ymax*diff(plot_lims$s))/6+plot_lims$s[1]))
+  df_distr_m <- mutate(df_distr_S, ymin=plot_lims$m[1],
+                       ymax=((ymax*diff(plot_lims$m))/6+plot_lims$m[1]))
+  
+  if (edge) {
+    ests <- c("Cox (basic)", "Cox (spline 4 df)", "Cox (edge)",
+              "Cox (edge + spline 4 df)")
+  } else {
+    ests <- c("Cox (basic)", "Cox (spline 4 df)", "Cox (spline 8 df)")
+  }
   
   p_data %<>% mutate(
-    surv_true = ifelse(surv_true=="Cox PH", "Linear", surv_true)
+    surv_true = ifelse(surv_true=="Cox PH", "Linear", surv_true),
+    Estimator = factor(Estimator, levels=ests)
   )
   
   # Set up facets
@@ -122,6 +148,7 @@ for (edge in c(F,T)) {
     geom_line() +
     facet_grid(rows=f_rows, cols=f_cols) +
     scale_y_continuous(limits=plot_lims$b) +
+    scale_color_manual(values=cb_colors) +
     theme(legend.position="bottom") +
     labs(y="Bias", x="S", color="Estimator")
   
@@ -132,6 +159,7 @@ for (edge in c(F,T)) {
     geom_line() +
     facet_grid(rows=f_rows, cols=f_cols) +
     scale_y_continuous(labels=percent, limits=plot_lims$c) +
+    scale_color_manual(values=cb_colors) +
     theme(legend.position="bottom") +
     labs(y="Coverage (%)", x="S", color="Estimator")
   
@@ -141,8 +169,19 @@ for (edge in c(F,T)) {
     geom_line() +
     facet_grid(rows=f_rows, cols=f_cols) +
     scale_y_continuous(limits=plot_lims$s) +
+    scale_color_manual(values=cb_colors) +
     theme(legend.position="bottom") +
     labs(y="Standard error", x="S", color="Estimator")
+  
+  # MSE plot
+  plot_m <- ggplot(filter(p_data, stat=="mse"), p_aes) +
+    p_ribbon(df_distr_m) +
+    geom_line() +
+    facet_grid(rows=f_rows, cols=f_cols) +
+    scale_y_continuous(limits=plot_lims$m) +
+    scale_color_manual(values=cb_colors) +
+    theme(legend.position="bottom") +
+    labs(y="Mean squared error", x="S", color="Estimator")
   
   # Save plots
   if (edge) {
@@ -152,12 +191,16 @@ for (edge in c(F,T)) {
            device="pdf", width=7, height=4)
     ggsave(filename="sim_est_edge_se.pdf", plot=plot_s,
            device="pdf", width=7, height=4)
+    ggsave(filename="sim_est_edge_mse.pdf", plot=plot_m,
+           device="pdf", width=7, height=4)
   } else {
     ggsave(filename="sim_est_bias.pdf", plot=plot_b,
            device="pdf", width=10, height=6)
     ggsave(filename="sim_est_cov.pdf", plot=plot_c,
            device="pdf", width=10, height=6)
     ggsave(filename="sim_est_se.pdf", plot=plot_s,
+           device="pdf", width=10, height=6)
+    ggsave(filename="sim_est_mse.pdf", plot=plot_m,
            device="pdf", width=10, height=6)
   }
   
@@ -249,7 +292,7 @@ plot <- ggplot(p_data, aes(x=n, y=value, color=factor(stat),
   geom_point(alpha=0.5) +
   facet_grid(rows=f_rows, cols=f_cols) +
   scale_y_continuous(limits=plot_lims$s) +
-  # scale_color_manual(values=m_colors) +
+  scale_color_manual(values=cb_colors) +
   theme(legend.position="bottom") +
   labs(y="Scaled standard error", x="Sample size", color="")
 ggsave(filename="se_est.pdf", plot=plot, device="pdf", width=10, height=6)
@@ -262,95 +305,91 @@ ggsave(filename="se_est.pdf", plot=plot, device="pdf", width=10, height=6)
 
 # Figures produced: sample_paths
 
-if (F) {
-  
-  sim <- readRDS("SimEngine.out/estimation_1_20231110.rds")
-  
-  plot_df <- data.frame(
-    "surv_true" = character(),
-    "estimator" = character(),
-    "row" = integer(),
-    "point" = double(),
-    "value" = double(),
-    "which" = character()
-  )
-  
-  res <- sim$results %>% mutate(
-    surv_true = ifelse(surv_true=="Cox PH", "Linear", surv_true)
-  )
-  
-  surv_trues <- c("Linear", "Cubic", "S-shaped")
-  estimators <- c("Cox (basic)", "Cox (spline 4 df)", "Cox (spline 8 df)")
-  
-  # Add sample paths
-  n_rows <- 10
-  for (s in surv_trues) {
-    for (e in estimators) {
-      
-      res2 <- filter(res, distr_S=="Unif(0,1)" & surv_true==s & estimator==e)
-      res2 <- res2[1:n_rows,]
-      
-      for (row in c(1:n_rows)) {
-        for (i in c(1:51)) {
-          m <- format(round(i/50-0.02,2), nsmall=2)
-          new_row <- list(
-            "surv_true" = s,
-            "estimator" = e,
-            "row" = row,
-            "point" = as.numeric(m),
-            "value" = as.numeric(res2[row,paste0("r_Mn_",m)]),
-            "which" = "Estimate"
-          )
-          plot_df[nrow(plot_df)+1,] <- new_row
-        }
-      }
-      
-    }
-  }
-  
-  # Add true curves
-  for (s in surv_trues) {
-    for (e in estimators) {
-      
-      res2 <- filter(res, distr_S=="Unif(0,1)" & surv_true==s & estimator==e)
-      res2 <- res2[1,]
-      
+sim <- readRDS("SimEngine.out/estimation_1_20231110.rds")
+
+plot_df <- data.frame(
+  "surv_true" = character(),
+  "estimator" = character(),
+  "row" = integer(),
+  "point" = double(),
+  "value" = double(),
+  "which" = character()
+)
+
+res <- sim$results %>% mutate(
+  surv_true = ifelse(surv_true=="Cox PH", "Linear", surv_true)
+)
+
+surv_trues <- c("Linear", "Cubic", "S-shaped")
+estimators <- c("Cox (basic)", "Cox (spline 4 df)", "Cox (spline 8 df)")
+
+# Add sample paths
+n_rows <- 10
+for (s in surv_trues) {
+  for (e in estimators) {
+    
+    res2 <- filter(res, distr_S=="Unif(0,1)" & surv_true==s & estimator==e)
+    res2 <- res2[1:n_rows,]
+    
+    for (row in c(1:n_rows)) {
       for (i in c(1:51)) {
         m <- format(round(i/50-0.02,2), nsmall=2)
         new_row <- list(
           "surv_true" = s,
           "estimator" = e,
-          "row" = 0,
+          "row" = row,
           "point" = as.numeric(m),
-          "value" = as.numeric(res2[1,paste0("r_M0_",m)]),
-          "which" = "Truth"
+          "value" = as.numeric(res2[row,paste0("r_Mn_",m)]),
+          "which" = "Estimate"
         )
         plot_df[nrow(plot_df)+1,] <- new_row
       }
-      
     }
+    
   }
-  
-  plot_df %<>% mutate(width=ifelse(which=="Estimate", 1, 2))
-  
-  # Generate and save plot
-  plot <- ggplot(
-    plot_df,
-    aes(x=point, y=value, group=factor(row), color=which, alpha=which,
-        linewidth=width)
-  ) +
-    geom_line() +
-    scale_color_manual(values=c("forestgreen","black")) +
-    scale_alpha_discrete(guide="none", range=c(0.5,1)) +
-    scale_linewidth(guide="none", range=c(0.5,1)) +
-    facet_grid(rows = dplyr::vars(factor(surv_true, levels=surv_trues)),
-               cols = dplyr::vars(factor(estimator, levels=estimators))) +
-    theme(legend.position="bottom") +
-    labs(y="Marginalized risk", x="S", color="")
-  ggsave(filename="sample_paths.pdf", plot=plot,
-         device="pdf", width=10, height=6)
-  
 }
+
+# Add true curves
+for (s in surv_trues) {
+  for (e in estimators) {
+    
+    res2 <- filter(res, distr_S=="Unif(0,1)" & surv_true==s & estimator==e)
+    res2 <- res2[1,]
+    
+    for (i in c(1:51)) {
+      m <- format(round(i/50-0.02,2), nsmall=2)
+      new_row <- list(
+        "surv_true" = s,
+        "estimator" = e,
+        "row" = 0,
+        "point" = as.numeric(m),
+        "value" = as.numeric(res2[1,paste0("r_M0_",m)]),
+        "which" = "Truth"
+      )
+      plot_df[nrow(plot_df)+1,] <- new_row
+    }
+    
+  }
+}
+
+plot_df %<>% mutate(width=ifelse(which=="Estimate", 1, 2))
+
+# Generate and save plot
+plot <- ggplot(
+  plot_df,
+  aes(x=point, y=value, group=factor(row), color=which, alpha=which,
+      linewidth=width)
+) +
+  geom_line() +
+  scale_color_manual(values=c("#009E73","black")) +
+  scale_alpha_discrete(guide="none", range=c(0.5,1)) +
+  scale_linewidth(guide="none", range=c(0.5,1)) +
+  facet_grid(rows = dplyr::vars(factor(surv_true, levels=surv_trues)),
+             cols = dplyr::vars(factor(estimator, levels=estimators))) +
+  theme(legend.position="bottom") +
+  labs(y="Marginalized risk", x="S", color="")
+ggsave(filename="sample_paths.pdf", plot=plot,
+       device="pdf", width=10, height=6)
 
 
 
@@ -360,7 +399,7 @@ if (F) {
 
 # Figures produced: bootstrap_comp_coverage
 
-sim <- readRDS("SimEngine.out/estimation_4_20231122.rds")
+sim <- readRDS("SimEngine.out/estimation_4_20231203.rds")
 
 summ_cov <- list()
 for (i in c(1:51)) {
@@ -407,8 +446,8 @@ p_data %<>% dplyr::mutate(
   num_events = case_when(
     sc_params=="lmbd_23" & distr_S=="Unif(0,1)" ~ 9.9,
     sc_params=="lmbd_23" & distr_S=="N(0.5,0.04)" ~ 9.2,
-    sc_params=="lmbd_24" & distr_S=="Unif(0,1)" ~ 19.6,
-    sc_params=="lmbd_24" & distr_S=="N(0.5,0.04)" ~ 18.2,
+    # sc_params=="lmbd_24" & distr_S=="Unif(0,1)" ~ 19.6,
+    # sc_params=="lmbd_24" & distr_S=="N(0.5,0.04)" ~ 18.2,
     sc_params=="lmbd_25" & distr_S=="Unif(0,1)" ~ 38.4,
     sc_params=="lmbd_25" & distr_S=="N(0.5,0.04)" ~ 35.1,
     sc_params=="lmbd_26" & distr_S=="Unif(0,1)" ~ 72.2,
@@ -429,6 +468,7 @@ plot <- ggplot(
   geom_line() +
   facet_grid(cols=f_cols) +
   scale_y_continuous(labels=percent, limits=c(0.7,1)) +
+  scale_color_manual(values=cb_colors) +
   theme(legend.position="bottom") +
   labs(y="Coverage (%)", x="Expected number of events", color=NULL)
 ggsave(filename="bootstrap_comp_coverage.pdf", plot=plot, device="pdf",
@@ -478,8 +518,8 @@ p_data %<>% dplyr::mutate(
   num_events = case_when(
     sc_params=="lmbd_23" & distr_S=="Unif(0,1)" ~ 9.9,
     sc_params=="lmbd_23" & distr_S=="N(0.5,0.04)" ~ 9.2,
-    sc_params=="lmbd_24" & distr_S=="Unif(0,1)" ~ 19.6,
-    sc_params=="lmbd_24" & distr_S=="N(0.5,0.04)" ~ 18.2,
+    # sc_params=="lmbd_24" & distr_S=="Unif(0,1)" ~ 19.6,
+    # sc_params=="lmbd_24" & distr_S=="N(0.5,0.04)" ~ 18.2,
     sc_params=="lmbd_25" & distr_S=="Unif(0,1)" ~ 38.4,
     sc_params=="lmbd_25" & distr_S=="N(0.5,0.04)" ~ 35.1,
     sc_params=="lmbd_26" & distr_S=="Unif(0,1)" ~ 72.2,
@@ -501,6 +541,7 @@ plot <- ggplot(
   # ylim(p_lims$y) +
   # xlim(p_lims$x) +
   theme(legend.position="bottom") +
+  scale_color_manual(values=cb_colors) +
   labs(y="Confidence interval width", x="Expected number of events", color=NULL)
 ggsave(filename="bootstrap_comp_ci_width.pdf", plot=plot, device="pdf",
        width=6, height=3.5)

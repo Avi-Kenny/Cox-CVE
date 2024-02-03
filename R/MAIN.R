@@ -4,7 +4,7 @@ cfg <- list(
   run_process = F,
   sim_which = "estimation",
   sim_level_set = "estimation_4",
-  sim_run_or_update = "run",
+  sim_run_or_update = "update",
   sim_num = 10000,
   sim_parallel = F,
   sim_n_cores = 500,
