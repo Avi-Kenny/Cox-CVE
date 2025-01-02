@@ -3,11 +3,12 @@ cfg <- list(
   run_sims = T,
   run_process = F,
   sim_which = "estimation",
-  sim_level_set = "estimation_4",
-  sim_run_or_update = "update",
-  sim_num = 10000,
+  sim_level_set = "estimation_5",
+  sim_run_or_update = "run",
+  # sim_num = 10000,
+  sim_num = 1000,
   sim_parallel = F,
-  sim_n_cores = 500,
+  sim_n_cores = 50,
   sim_stop_at_error = F
 )
 

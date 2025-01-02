@@ -28,7 +28,8 @@ if (cfg$run_sims && Sys.getenv("sim_run") %in% c("first", "")) {
       "Cox (spline 4 df)" = list(spline_df=4, edge_ind=F),
       "Cox (spline 8 df)" = list(spline_df=8, edge_ind=F)
     ),
-    bootstrap = F
+    bootstrap = F,
+    unif_cis = F
   )
   
   # Estimation: edge mass
@@ -50,7 +51,8 @@ if (cfg$run_sims && Sys.getenv("sim_run") %in% c("first", "")) {
       "Cox (spline 4 df)" = list(spline_df=4, edge_ind=F),
       "Cox (edge + spline 4 df)" = list(spline_df=4, edge_ind=T)
     ),
-    bootstrap = F
+    bootstrap = F,
+    unif_cis = F
   )
   
   # Estimation: standard error estimation
@@ -70,7 +72,8 @@ if (cfg$run_sims && Sys.getenv("sim_run") %in% c("first", "")) {
     estimator = list(
       "Cox (basic)" = list(spline_df=1, edge_ind=F)
     ),
-    bootstrap = F
+    bootstrap = F,
+    unif_cis = F
   )
   
   # Estimation: bootstrap vs. analytic SEs
@@ -106,7 +109,32 @@ if (cfg$run_sims && Sys.getenv("sim_run") %in% c("first", "")) {
     wts_type = "estimated",
     estimator = list("Cox (basic)" = list(spline_df=1, edge_ind=F)),
     bootstrap = c(F,T),
+    unif_cis = F,
     return_num_events = T
+  )
+  
+  # Estimation: coverage of uniform confidence bands
+  # Figures: uniform_conf_bands
+  level_sets[["estimation_5"]] <- list(
+    n = 1000,
+    t_0 = 200,
+    alpha_3 = -2,
+    dir = "decr",
+    sc_params = list("sc_params"=list(lmbd=2e-4, v=1.5, lmbd2=5e-5, v2=1.5)),
+    # distr_S = c("Unif(0,1)", "N(0.5,0.04)"),
+    distr_S = c("Unif(0,1)"),
+    edge = "none",
+    # surv_true = c("Cox PH", "S-shaped", "Cubic"),
+    surv_true = c("Cox PH"),
+    sampling = "two-phase (50%)",
+    wts_type = "estimated",
+    estimator = list(
+      "Cox (basic)" = list(spline_df=1, edge_ind=F)
+      # "Cox (spline 4 df)" = list(spline_df=4, edge_ind=F),
+      # "Cox (spline 8 df)" = list(spline_df=8, edge_ind=F)
+    ),
+    bootstrap = F,
+    unif_cis = T
   )
   
   level_set <- level_sets[[cfg$sim_level_set]]

@@ -27,7 +27,15 @@ if (cfg$sim_which=="estimation") {
     )
 
     # Obtain estimates
-    if (L$bootstrap) { ci_type <- "none" } else { ci_type <- "transformed" }
+    if (L$bootstrap) {
+      ci_type <- "none"
+    } else {
+      if (L$unif_cis) {
+        ci_type <- "uniform"
+      } else {
+        ci_type <- "transformed"
+      }
+    }
     ests <- vaccine::est_ce(
       dat = dat,
       type = "Cox",

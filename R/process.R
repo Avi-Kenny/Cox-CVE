@@ -545,3 +545,104 @@ plot <- ggplot(
   labs(y="Confidence interval width", x="Expected number of events", color=NULL)
 ggsave(filename="bootstrap_comp_ci_width.pdf", plot=plot, device="pdf",
        width=6, height=3.5)
+
+
+
+####################################.
+##### Confidence band coverage #####
+####################################.
+
+# Figures produced: uniform_conf_bands
+
+sim <- readRDS("SimEngine.out/estimation_5_20250102.rds")
+
+# Summarize results
+cov_vec <- rep(1, nrow(sim$results))
+for (i in c(1:51)) {
+  m <- format(round(i/50-0.02,2), nsmall=2)
+  cov_vec <- cov_vec * as.integer(
+    sim$results[[paste0("ci_lo_",m)]] <= sim$results[[paste0("r_M0_",m)]] &
+      sim$results[[paste0("r_M0_",m)]] <= sim$results[[paste0("ci_up_",m)]]
+  )
+}
+mean(cov_vec)
+# !!!!! CONTINUE
+# sim %>% SimEngine::summarize(
+#   list(stat="mean", x="cov_unif")
+# )
+
+
+
+
+
+
+
+
+# for (i in c(1:51)) {
+#   m <- format(round(i/50-0.02,2), nsmall=2)
+#   sim$results[,paste0("ciwd_",m)] <- sim$results[,paste0("ci_up_",m)] -
+#     sim$results[,paste0("ci_lo_",m)]
+# }
+# summ <- sim %>% SimEngine::summarize(
+#   list(stat="mean", x="ciwd_0.20", name="ciwd_0.20", na.rm=T),
+#   list(stat="mean", x="ciwd_0.50", name="ciwd_0.50", na.rm=T),
+#   list(stat="mean", x="ciwd_0.80", name="ciwd_0.80", na.rm=T)
+# )
+# 
+# p_data <- pivot_longer(
+#   data = summ,
+#   cols = -c("level_id", "n_reps", names(sim$levels)),
+#   names_to = c("stat","point"),
+#   names_sep = "_"
+# )
+# p_data %<>% mutate(point = as.numeric(point))
+# 
+# # Set faceting vectors
+# distr_Ss <- c("Unif(0,1)", "N(0.5,0.04)")
+# 
+# # Set limits
+# p_lims <- list(x=c(0,150), y=c(0,0.04))
+# 
+# # Set up facets
+# f_cols <- dplyr::vars(factor(distr_S, levels=distr_Ss))
+# 
+# p_data %<>% dplyr::filter(point==0.5)
+# p_data %<>% dplyr::mutate(
+#   bootstrap = ifelse(bootstrap, "Bootstrap", "Analytic"),
+#   num_events = case_when(
+#     sc_params=="lmbd_23" & distr_S=="Unif(0,1)" ~ 9.9,
+#     sc_params=="lmbd_23" & distr_S=="N(0.5,0.04)" ~ 9.2,
+#     # sc_params=="lmbd_24" & distr_S=="Unif(0,1)" ~ 19.6,
+#     # sc_params=="lmbd_24" & distr_S=="N(0.5,0.04)" ~ 18.2,
+#     sc_params=="lmbd_25" & distr_S=="Unif(0,1)" ~ 38.4,
+#     sc_params=="lmbd_25" & distr_S=="N(0.5,0.04)" ~ 35.1,
+#     sc_params=="lmbd_26" & distr_S=="Unif(0,1)" ~ 72.2,
+#     sc_params=="lmbd_26" & distr_S=="N(0.5,0.04)" ~ 67.5,
+#     sc_params=="lmbd_27" & distr_S=="Unif(0,1)" ~ 133.4,
+#     sc_params=="lmbd_27" & distr_S=="N(0.5,0.04)" ~ 126.7,
+#     sc_params=="lmbd_32" & distr_S=="Unif(0,1)" ~ 230.1,
+#     sc_params=="lmbd_32" & distr_S=="N(0.5,0.04)" ~ 222.1
+#   )
+# )
+# 
+# # CI width plot
+# plot <- ggplot(
+#   p_data,
+#   aes(x=num_events, y=value, color=factor(bootstrap),
+#       group=factor(bootstrap))) +
+#   geom_line() +
+#   facet_grid(cols=f_cols) +
+#   # ylim(p_lims$y) +
+#   # xlim(p_lims$x) +
+#   theme(legend.position="bottom") +
+#   scale_color_manual(values=cb_colors) +
+#   labs(y="Confidence interval width", x="Expected number of events", color=NULL)
+# ggsave(filename="bootstrap_comp_ci_width.pdf", plot=plot, device="pdf",
+#        width=6, height=3.5)
+
+
+
+
+
+
+
