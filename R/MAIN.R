@@ -8,7 +8,7 @@ cfg <- list(
   # sim_num = 10000,
   sim_num = 1000,
   sim_parallel = F,
-  sim_n_cores = 50,
+  sim_n_cores = 100,
   sim_stop_at_error = F
 )
 

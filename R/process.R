@@ -557,22 +557,34 @@ ggsave(filename="bootstrap_comp_ci_width.pdf", plot=plot, device="pdf",
 sim <- readRDS("SimEngine.out/estimation_5_20250102.rds")
 
 # Summarize results
-cov_vec <- rep(1, nrow(sim$results))
-for (i in c(1:51)) {
-  m <- format(round(i/50-0.02,2), nsmall=2)
-  cov_vec <- cov_vec * as.integer(
-    sim$results[[paste0("ci_lo_",m)]] <= sim$results[[paste0("r_M0_",m)]] &
-      sim$results[[paste0("r_M0_",m)]] <= sim$results[[paste0("ci_up_",m)]]
-  )
+cov_df <- data.frame(
+  n = integer(),
+  cov = double()
+)
+for (n2 in unique(sim$results$n)) {
+  res_df <- dplyr::filter(sim$results, n==n2)
+  cov_vec <- rep(1, nrow(res_df))
+  for (i in c(1:51)) {
+    m <- format(round(i/50-0.02,2), nsmall=2)
+    cov_vec <- cov_vec * as.integer(
+      res_df[[paste0("ci_lo_",m)]] <= res_df[[paste0("r_M0_",m)]] &
+        res_df[[paste0("r_M0_",m)]] <= res_df[[paste0("ci_up_",m)]]
+    )
+  }
+  cov_df[nrow(cov_df)+1,] <- list(n2, mean(cov_vec))
 }
-mean(cov_vec)
-# !!!!! CONTINUE
-# sim %>% SimEngine::summarize(
-#   list(stat="mean", x="cov_unif")
-# )
-
-
-
+plot <- ggplot(cov_df, aes(x=n, y=cov)) +
+  geom_point() +
+  geom_line() +
+  scale_y_continuous(
+    breaks = seq(0.5,1,0.05),
+    labels = scales::percent,
+    limits = c(0.5,1)
+  ) +
+  labs(x="Sample size", y="Coverage") +
+  geom_hline(yintercept=0.95, linetype="dotted")
+ggsave(filename="uniform_conf_bands.pdf", plot=plot, device="pdf",
+       width=7, height=5)
 
 
 
@@ -637,8 +649,6 @@ mean(cov_vec)
 #   theme(legend.position="bottom") +
 #   scale_color_manual(values=cb_colors) +
 #   labs(y="Confidence interval width", x="Expected number of events", color=NULL)
-# ggsave(filename="bootstrap_comp_ci_width.pdf", plot=plot, device="pdf",
-#        width=6, height=3.5)
 
 
 

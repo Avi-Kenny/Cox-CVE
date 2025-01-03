@@ -116,7 +116,7 @@ if (cfg$run_sims && Sys.getenv("sim_run") %in% c("first", "")) {
   # Estimation: coverage of uniform confidence bands
   # Figures: uniform_conf_bands
   level_sets[["estimation_5"]] <- list(
-    n = 1000,
+    n = c(100, 200, 500, 1000, 2000),
     t_0 = 200,
     alpha_3 = -2,
     dir = "decr",
