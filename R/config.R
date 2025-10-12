@@ -7,8 +7,8 @@
 cfg$pkgs <- c(
   "vaccine", "dplyr", "boot", "car", "mgcv", "memoise", "EnvStats", "fdrtool",
   "splines", "survival", "SuperLearner", "survSuperLearner", "randomForestSRC",
-  "CFsurvival", "Rsolnp", "truncnorm", "tidyr", "ranger", "survey", "pbapply",
-  "compiler" # "survML" "xgboost"
+  "Rsolnp", "truncnorm", "tidyr", "ranger", "survey", "pbapply",
+  "compiler" # "survML" "xgboost" "CFsurvival"
 )
 cfg$pkgs_nocluster <- c(
   "ggplot2", "viridis", "sqldf", "scales", "data.table", "latex2exp"
@@ -23,10 +23,17 @@ if (Sys.getenv("HOME")=="/home/akenny") {
                  "/Code__", Sys.getenv("proj"))
   )
 } else if (Sys.getenv("HOME")=="/hpc/home/ak811") {
-  # DCC
+  # Duke DCC
   cluster_config <- list(
     js = "slurm",
     dir = paste0("/hpc/home/ak811/", Sys.getenv("proj"),
+                 "/Code__", Sys.getenv("proj"))
+  )
+} else if (Sys.getenv("HOME")=="/home/ak811") {
+  # Duke RCC
+  cluster_config <- list(
+    js = "slurm",
+    dir = paste0("/shared/home/ak811/", Sys.getenv("proj"),
                  "/Code__", Sys.getenv("proj"))
   )
 } else {
